@@ -2,7 +2,16 @@
 # main.py
 # FASTAPI CAR PRICE PREDICTION API
 # =============================================================================
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/app")
+def serve_app():
+    return FileResponse("static/index.html")
+
+    
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
