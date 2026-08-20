@@ -12,42 +12,6 @@ from predictor import predict_car_price
 
 
 # =============================================================================
-# CREATE FASTAPI APP  ← must come first
-# =============================================================================
-
-app = FastAPI(
-    title="Nigeria Car Price Prediction API",
-    description="Car price prediction using the Step 21 XGBoost model",
-    version="1.0.0"
-)
-
-
-# =============================================================================
-# CORS
-# =============================================================================
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-# =============================================================================
-# STATIC FILES / FRONTEND  ← now app exists, safe to mount
-# =============================================================================
-
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-@app.get("/app")
-def serve_app():
-    return FileResponse("static/index.html")
-
-
-# ...rest of your file (CarInput, /, /health, /predict) stays as-is
-# =============================================================================
 # CREATE FASTAPI APP
 # =============================================================================
 
@@ -69,6 +33,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# =============================================================================
+# STATIC FILES / FRONTEND
+# =============================================================================
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/app")
+def serve_app():
+    return FileResponse("static/index.html")
 
 
 # =============================================================================
