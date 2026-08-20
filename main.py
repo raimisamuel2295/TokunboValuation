@@ -2,8 +2,42 @@
 # main.py
 # FASTAPI CAR PRICE PREDICTION API
 # =============================================================================
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
+
+from predictor import predict_car_price
+
+
+# =============================================================================
+# CREATE FASTAPI APP  ← must come first
+# =============================================================================
+
+app = FastAPI(
+    title="Nigeria Car Price Prediction API",
+    description="Car price prediction using the Step 21 XGBoost model",
+    version="1.0.0"
+)
+
+
+# =============================================================================
+# CORS
+# =============================================================================
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# =============================================================================
+# STATIC FILES / FRONTEND  ← now app exists, safe to mount
+# =============================================================================
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -11,14 +45,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 def serve_app():
     return FileResponse("static/index.html")
 
-    
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 
-from predictor import predict_car_price
-
-
+# ...rest of your file (CarInput, /, /health, /predict) stays as-is
 # =============================================================================
 # CREATE FASTAPI APP
 # =============================================================================
