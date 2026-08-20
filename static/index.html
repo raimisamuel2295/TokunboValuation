@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOKUNBO — Nigerian Vehicle Valuation Index</title>
+<meta name="description" content="Get a defensible naira estimate for any vehicle in the Nigerian market, powered by a gradient-boosted valuation model.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   TOKENS
+============================================================ */
+:root{
+  --ink:#0E1013;
+  --panel:#15181D;
+  --panel-2:#1B1F26;
+  --line:#2A2E36;
+  --line-soft:#22262D;
+  --paper:#F3F0E6;
+  --paper-dim:#E4E0D2;
+  --text:#F2F0E9;
+  --muted:#8C919C;
+  --muted-2:#5E636D;
+  --signal:#F4B400;
+  --signal-ink:#332600;
+  --verify:#3C8A5B;
+  --danger:#E1614F;
+  --radius:2px;
+  --disp:'Big Shoulders Display', sans-serif;
+  --body:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono:'IBM Plex Mono', monospace;
+  --ease:cubic-bezier(.16,.8,.24,1);
+}
+
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto;}
+  *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+}
+body{
+  margin:0;
+  background:var(--ink);
+  color:var(--text);
+  font-family:var(--body);
+  font-size:16px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+img,svg{display:block; max-width:100%;}
+a{color:inherit;}
+h1,h2,h3{margin:0; font-family:var(--disp); font-weight:800; letter-spacing:0.01em; text-transform:uppercase;}
+p{margin:0;}
+button{font-family:inherit;}
+
+::selection{background:var(--signal); color:var(--signal-ink);}
+
+:focus-visible{
+  outline:2px solid var(--signal);
+  outline-offset:3px;
+}
+
+.wrap{
+  max-width:1180px;
+  margin:0 auto;
+  padding:0 32px;
+}
+.eyebrow{
+  font-family:var(--mono);
+  font-size:12px;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:var(--signal);
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.eyebrow::before{
+  content:"";
+  width:16px;
+  height:1px;
+  background:var(--signal);
+  display:inline-block;
+}
+
+.reveal{
+  opacity:0;
+  transform:translateY(18px);
+  transition:opacity .7s var(--ease), transform .7s var(--ease);
+}
+.reveal.is-visible{
+  opacity:1;
+  transform:translateY(0);
+}
+
+/* ============================================================
+   NAV
+============================================================ */
+.nav{
+  position:sticky;
+  top:0;
+  z-index:100;
+  background:rgba(14,16,19,0.86);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line-soft);
+}
+.nav-inner{
+  max-width:1180px;
+  margin:0 auto;
+  padding:18px 32px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.brand{
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+  text-decoration:none;
+}
+.brand-mark{
+  font-family:var(--disp);
+  font-size:22px;
+  font-weight:800;
+  letter-spacing:0.04em;
+  color:var(--text);
+}
+.brand-mark span{color:var(--signal);}
+.brand-sub{
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--muted-2);
+  display:none;
+}
+@media(min-width:640px){ .brand-sub{display:block;} }
+
+.nav-links{
+  display:flex;
+  gap:36px;
+  list-style:none;
+  margin:0; padding:0;
+}
+.nav-links a{
+  font-size:13px;
+  letter-spacing:0.04em;
+  text-transform:uppercase;
+  text-decoration:none;
+  color:var(--muted);
+  font-weight:500;
+  position:relative;
+  padding-bottom:4px;
+  transition:color .2s;
+}
+.nav-links a:hover{color:var(--text);}
+.nav-links a::after{
+  content:"";
+  position:absolute;
+  left:0; bottom:0;
+  width:0; height:1px;
+  background:var(--signal);
+  transition:width .25s var(--ease);
+}
+.nav-links a:hover::after{width:100%;}
+
+.nav-cta{
+  display:none;
+}
+@media(min-width:900px){
+  .nav-cta{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--signal);
+    color:var(--signal-ink);
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    text-decoration:none;
+    padding:11px 18px;
+    border-radius:var(--radius);
+  }
+}
+@media(min-width:900px){ .nav-links{display:flex;} }
+.nav-links{display:none;}
+
+.burger{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  background:none;
+  border:none;
+  padding:8px;
+  cursor:pointer;
+}
+@media(min-width:900px){ .burger{display:none;} }
+.burger span{
+  width:22px; height:2px;
+  background:var(--text);
+  transition:transform .25s var(--ease), opacity .25s var(--ease);
+}
+.burger[aria-expanded="true"] span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.burger[aria-expanded="true"] span:nth-child(2){opacity:0;}
+.burger[aria-expanded="true"] span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+
+.mobile-panel{
+  position:fixed; inset:0;
+  background:var(--ink);
+  z-index:99;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:28px;
+  padding:32px 40px;
+  transform:translateY(-100%);
+  transition:transform .35s var(--ease);
+}
+.mobile-panel.is-open{transform:translateY(0);}
+.mobile-panel a{
+  font-family:var(--disp);
+  font-size:34px;
+  text-transform:uppercase;
+  text-decoration:none;
+  color:var(--text);
+  font-weight:700;
+}
+
+/* ============================================================
+   HERO
+============================================================ */
+.hero{
+  padding:76px 0 90px;
+  border-bottom:1px solid var(--line-soft);
+  overflow:hidden;
+}
+.hero-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:56px;
+  align-items:center;
+}
+@media(min-width:960px){
+  .hero-grid{grid-template-columns:1.05fr 0.95fr; gap:40px;}
+}
+.hero-copy h1{
+  font-size:clamp(40px, 6.4vw, 68px);
+  line-height:0.98;
+  margin-top:18px;
+}
+.hero-copy h1 em{
+  font-style:normal;
+  color:var(--signal);
+}
+.hero-copy p.lede{
+  font-family:var(--body);
+  font-size:17px;
+  line-height:1.65;
+  color:var(--muted);
+  max-width:46ch;
+  margin-top:22px;
+  text-transform:none;
+}
+.hero-cta{
+  margin-top:34px;
+  display:flex;
+  align-items:center;
+  gap:22px;
+  flex-wrap:wrap;
+}
+.btn{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  font-family:var(--body);
+  font-weight:700;
+  font-size:14px;
+  letter-spacing:0.03em;
+  text-transform:uppercase;
+  padding:16px 26px;
+  border-radius:var(--radius);
+  border:1px solid transparent;
+  cursor:pointer;
+  text-decoration:none;
+  transition:transform .18s var(--ease), background .18s, border-color .18s;
+}
+.btn:hover{transform:translateY(-2px);}
+.btn-primary{
+  background:var(--signal);
+  color:var(--signal-ink);
+}
+.btn-primary:hover{background:#FFC933;}
+.btn-ghost{
+  background:transparent;
+  color:var(--text);
+  border-color:var(--line);
+}
+.btn-ghost:hover{border-color:var(--muted);}
+.btn:disabled{opacity:0.55; cursor:not-allowed; transform:none;}
+
+.hero-note{
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--muted-2);
+  letter-spacing:0.03em;
+}
+
+/* ---- ticket (signature element) ---- */
+.ticket{
+  background:var(--paper);
+  color:#171308;
+  border-radius:3px;
+  position:relative;
+  padding:26px 26px 22px;
+  box-shadow:0 30px 60px -25px rgba(0,0,0,0.65);
+  transform:rotate(1.4deg);
+}
+.ticket-inner{
+  border:1px dashed rgba(23,19,8,0.35);
+  padding:22px 20px 18px;
+  position:relative;
+}
+.ticket-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:10px;
+}
+.ticket-eyebrow{
+  font-family:var(--mono);
+  font-size:10.5px;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:#5A4E1E;
+}
+.ticket-serial{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.06em;
+  color:#5A4E1E;
+  text-align:right;
+}
+.ticket-vehicle{
+  margin-top:16px;
+  font-family:var(--disp);
+  font-weight:800;
+  font-size:20px;
+  letter-spacing:0.01em;
+  text-transform:uppercase;
+}
+.ticket-vehicle-sub{
+  font-family:var(--mono);
+  font-size:11.5px;
+  color:#4A4020;
+  margin-top:4px;
+  text-transform:uppercase;
+  letter-spacing:0.04em;
+}
+.ticket-price-block{
+  margin-top:22px;
+  padding-top:18px;
+  border-top:1px dashed rgba(23,19,8,0.35);
+}
+.ticket-price-label{
+  font-family:var(--mono);
+  font-size:10.5px;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:#5A4E1E;
+}
+.ticket-price{
+  font-family:var(--disp);
+  font-weight:900;
+  font-size:clamp(38px, 5.4vw, 52px);
+  line-height:1;
+  margin-top:8px;
+  letter-spacing:0.01em;
+}
+.ticket-rows{
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px dashed rgba(23,19,8,0.35);
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px 18px;
+  font-family:var(--mono);
+  font-size:11.5px;
+}
+.ticket-row{display:flex; justify-content:space-between; gap:8px; border-bottom:1px solid rgba(23,19,8,0.12); padding-bottom:6px;}
+.ticket-row dt{color:#5A4E1E; text-transform:uppercase; letter-spacing:0.04em;}
+.ticket-row dd{margin:0; font-weight:600; text-align:right;}
+.ticket-barcode{
+  margin-top:18px;
+  height:22px;
+  background:repeating-linear-gradient(90deg, #171308 0 2px, transparent 2px 5px, #171308 5px 6px, transparent 6px 11px, #171308 11px 13px, transparent 13px 17px);
+  opacity:0.85;
+}
+.ticket-stamp{
+  position:absolute;
+  right:14px;
+  bottom:14px;
+  width:92px; height:92px;
+  border:2.5px solid var(--verify);
+  border-radius:50%;
+  color:var(--verify);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-family:var(--disp);
+  font-weight:800;
+  font-size:13px;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  transform:rotate(-14deg);
+  opacity:0.9;
+  line-height:1.15;
+  pointer-events:none;
+}
+@keyframes stampIn{
+  0%{opacity:0; transform:rotate(-14deg) scale(2.2);}
+  60%{opacity:0.95; transform:rotate(-14deg) scale(0.92);}
+  100%{opacity:0.9; transform:rotate(-14deg) scale(1);}
+}
+.ticket-stamp.animate{animation:stampIn .5s var(--ease) both;}
+
+/* ============================================================
+   PROOF / STATS
+============================================================ */
+.proof{
+  border-bottom:1px solid var(--line-soft);
+  padding:40px 0;
+}
+.proof-grid{
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:28px;
+}
+@media(min-width:760px){ .proof-grid{grid-template-columns:repeat(4, 1fr);} }
+.proof-item{
+  border-left:1px solid var(--line);
+  padding-left:16px;
+}
+.proof-num{
+  font-family:var(--disp);
+  font-weight:800;
+  font-size:30px;
+  color:var(--text);
+}
+.proof-label{
+  font-family:var(--mono);
+  font-size:10.5px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--muted-2);
+  margin-top:4px;
+}
+
+/* ============================================================
+   PROCESS
+============================================================ */
+.process{padding:100px 0; border-bottom:1px solid var(--line-soft);}
+.section-head{max-width:640px;}
+.section-head h2{
+  font-size:clamp(30px, 4.4vw, 44px);
+  margin-top:16px;
+  line-height:1.02;
+}
+.section-head p{
+  font-family:var(--body);
+  color:var(--muted);
+  font-size:16px;
+  margin-top:14px;
+  text-transform:none;
+  line-height:1.6;
+}
+.process-grid{
+  margin-top:56px;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:1px;
+  background:var(--line-soft);
+  border:1px solid var(--line-soft);
+}
+@media(min-width:820px){ .process-grid{grid-template-columns:repeat(3, 1fr);} }
+.process-card{
+  background:var(--ink);
+  padding:34px 30px 38px;
+}
+.process-index{
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--signal);
+  letter-spacing:0.08em;
+}
+.process-card h3{
+  margin-top:22px;
+  font-size:21px;
+  text-transform:none;
+  letter-spacing:0;
+}
+.process-card p{
+  margin-top:12px;
+  color:var(--muted);
+  font-size:14.5px;
+  line-height:1.6;
+  text-transform:none;
+}
+
+/* ============================================================
+   VALUATION FORM
+============================================================ */
+.valuation{padding:100px 0 120px; border-bottom:1px solid var(--line-soft);}
+.val-layout{
+  margin-top:52px;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:40px;
+}
+@media(min-width:1020px){
+  .val-layout{grid-template-columns:minmax(0,1fr) 360px; align-items:start;}
+}
+
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:32px;
+}
+@media(min-width:640px){ .panel{padding:40px;} }
+
+fieldset{
+  border:none;
+  margin:0 0 34px;
+  padding:0;
+}
+fieldset legend{
+  font-family:var(--mono);
+  font-size:11.5px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--signal);
+  padding:0 0 16px;
+  width:100%;
+  border-bottom:1px solid var(--line);
+  margin-bottom:20px;
+}
+.field-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:18px;
+}
+@media(min-width:640px){ .field-grid{grid-template-columns:1fr 1fr;} }
+
+.field{display:flex; flex-direction:column; gap:8px;}
+.field.span-2{grid-column:1 / -1;}
+.field label{
+  font-size:12.5px;
+  font-weight:600;
+  color:var(--text);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.field label .req{color:var(--signal); margin-left:2px;}
+.field label .opt{
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--muted-2);
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+  font-weight:400;
+}
+.field input, .field select, .field textarea{
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  color:var(--text);
+  font-family:var(--body);
+  font-size:14.5px;
+  padding:12px 14px;
+  border-radius:var(--radius);
+  transition:border-color .18s;
+  width:100%;
+}
+.field textarea{resize:vertical; min-height:96px; line-height:1.55;}
+.field input:hover, .field select:hover, .field textarea:hover{border-color:var(--muted-2);}
+.field input:focus, .field select:focus, .field textarea:focus{
+  outline:none;
+  border-color:var(--signal);
+}
+.field select{
+  appearance:none;
+  background-image:linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 20px) center, calc(100% - 15px) center;
+  background-size:5px 5px, 5px 5px;
+  background-repeat:no-repeat;
+  padding-right:36px;
+}
+.field-check{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:2px;
+}
+.field-check input{width:auto; accent-color:var(--signal);}
+.field-check label{font-size:12px; color:var(--muted); font-weight:400;}
+
+.advanced-toggle{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  background:transparent;
+  border:1px solid var(--line);
+  color:var(--text);
+  padding:16px 18px;
+  border-radius:var(--radius);
+  cursor:pointer;
+  font-family:var(--body);
+  font-size:13.5px;
+  font-weight:600;
+  margin-bottom:6px;
+  transition:border-color .18s;
+}
+.advanced-toggle:hover{border-color:var(--muted-2);}
+.advanced-toggle .chev{
+  font-family:var(--mono);
+  transition:transform .25s var(--ease);
+  color:var(--signal);
+}
+.advanced-toggle[aria-expanded="true"] .chev{transform:rotate(180deg);}
+.advanced-body{
+  max-height:0;
+  overflow:hidden;
+  transition:max-height .4s var(--ease);
+}
+.advanced-body.is-open{max-height:2400px;}
+.advanced-body-inner{padding-top:28px;}
+
+.form-error{
+  display:none;
+  align-items:flex-start;
+  gap:12px;
+  background:rgba(225,97,79,0.1);
+  border:1px solid rgba(225,97,79,0.4);
+  color:#F3B6AC;
+  padding:16px 18px;
+  border-radius:var(--radius);
+  font-size:13.5px;
+  margin-bottom:24px;
+  line-height:1.5;
+}
+.form-error.is-visible{display:flex;}
+.form-error strong{color:#FFD3CC; display:block; margin-bottom:2px; font-family:var(--body);}
+
+.submit-row{
+  display:flex;
+  align-items:center;
+  gap:18px;
+  margin-top:8px;
+  flex-wrap:wrap;
+}
+.submit-row .hero-note{max-width:36ch;}
+
+.spinner{
+  width:14px; height:14px;
+  border-radius:50%;
+  border:2px solid rgba(51,38,0,0.3);
+  border-top-color:var(--signal-ink);
+  display:none;
+  animation:spin .7s linear infinite;
+}
+.btn.is-loading .spinner{display:inline-block;}
+.btn.is-loading .btn-label{opacity:0.85;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* result side panel */
+.result-side{position:sticky; top:110px;}
+.result-placeholder{
+  border:1px dashed var(--line);
+  border-radius:var(--radius);
+  padding:40px 26px;
+  text-align:center;
+}
+.result-placeholder .mark{
+  width:46px; height:46px;
+  border:1.5px solid var(--muted-2);
+  border-radius:50%;
+  margin:0 auto 18px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono);
+  color:var(--muted-2);
+  font-size:18px;
+}
+.result-placeholder h3{
+  font-size:15px;
+  text-transform:none;
+  letter-spacing:0;
+  color:var(--muted);
+  font-family:var(--body);
+  font-weight:600;
+}
+.result-placeholder p{
+  margin-top:10px;
+  font-size:13px;
+  color:var(--muted-2);
+  line-height:1.6;
+  text-transform:none;
+}
+
+.result-wrap{display:none;}
+.result-wrap.is-visible{display:block;}
+.result-disclaimer{
+  margin-top:18px;
+  font-size:11.5px;
+  color:var(--muted-2);
+  line-height:1.6;
+  padding:14px 16px;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+}
+.result-actions{margin-top:18px; display:flex; flex-direction:column; gap:10px;}
+.result-actions .btn{justify-content:center; width:100%;}
+
+/* ============================================================
+   METHODOLOGY / ABOUT
+============================================================ */
+.method{padding:100px 0;}
+.method-grid{
+  margin-top:48px;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:40px;
+}
+@media(min-width:880px){ .method-grid{grid-template-columns:0.9fr 1.1fr;} }
+.method-copy p{
+  font-family:var(--body);
+  color:var(--muted);
+  font-size:15.5px;
+  line-height:1.75;
+  text-transform:none;
+}
+.method-copy p + p{margin-top:16px;}
+.method-list{
+  list-style:none;
+  margin:0; padding:0;
+  display:grid;
+  gap:1px;
+  background:var(--line-soft);
+  border:1px solid var(--line-soft);
+}
+.method-list li{
+  background:var(--ink);
+  padding:20px 22px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:14px;
+}
+.method-list .k{
+  font-family:var(--mono);
+  font-size:12px;
+  letter-spacing:0.05em;
+  color:var(--muted);
+  text-transform:uppercase;
+}
+.method-list .v{
+  font-family:var(--disp);
+  font-weight:700;
+  font-size:16px;
+  color:var(--text);
+  text-align:right;
+}
+
+/* ============================================================
+   FOOTER
+============================================================ */
+footer{
+  border-top:1px solid var(--line-soft);
+  padding:56px 0 40px;
+}
+.footer-grid{
+  display:flex;
+  flex-direction:column;
+  gap:28px;
+}
+@media(min-width:760px){
+  .footer-grid{flex-direction:row; justify-content:space-between; align-items:flex-end;}
+}
+.footer-nav{
+  display:flex;
+  gap:26px;
+  flex-wrap:wrap;
+  list-style:none;
+  padding:0; margin:0;
+}
+.footer-nav a{
+  font-size:13px;
+  color:var(--muted);
+  text-decoration:none;
+}
+.footer-nav a:hover{color:var(--text);}
+.footer-fine{
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--muted-2);
+  margin-top:18px;
+  max-width:52ch;
+  line-height:1.6;
+}
+
+/* utility */
+.visually-hidden{
+  position:absolute; width:1px; height:1px;
+  overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     NAV
+============================================================ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#top" class="brand">
+      <span class="brand-mark">TOKUNBO<span>.</span></span>
+      <span class="brand-sub">Vehicle Valuation Index</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#top">Home</a></li>
+      <li><a href="#valuation">Valuation</a></li>
+      <li><a href="#method">Methodology</a></li>
+      <li><a href="#about">About</a></li>
+    </ul>
+    <a href="#valuation" class="nav-cta">Start valuation</a>
+    <button class="burger" id="burgerBtn" aria-expanded="false" aria-controls="mobilePanel" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="mobile-panel" id="mobilePanel">
+  <a href="#top">Home</a>
+  <a href="#valuation">Valuation</a>
+  <a href="#method">Methodology</a>
+  <a href="#about">About</a>
+</div>
+
+<main id="top">
+
+<!-- ============================================================
+     HERO
+============================================================ -->
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow">Nigerian market · gradient-boosted valuation</p>
+      <h1>Know what it's <em>really</em> worth.</h1>
+      <p class="lede">TOKUNBO reads a vehicle's spec sheet the way a seasoned dealer reads a car in person &mdash; condition, mileage, trim and the local market &mdash; and returns a defensible naira estimate in seconds.</p>
+      <div class="hero-cta">
+        <a href="#valuation" class="btn btn-primary">Start a valuation</a>
+        <a href="#method" class="btn btn-ghost">How it works</a>
+      </div>
+      <p class="hero-note" style="margin-top:22px;">No listing required &middot; no sign-up &middot; results in seconds</p>
+    </div>
+
+    <div class="hero-visual reveal">
+      <div class="ticket" aria-hidden="true">
+        <div class="ticket-inner">
+          <div class="ticket-top">
+            <span class="ticket-eyebrow">Valuation Certificate</span>
+            <span class="ticket-serial">NG&#8209;VAL&#8209;038241</span>
+          </div>
+          <div class="ticket-vehicle">Toyota Camry XSE</div>
+          <div class="ticket-vehicle-sub">2021 &middot; Foreign Used &middot; Automatic</div>
+          <div class="ticket-price-block">
+            <div class="ticket-price-label">Estimated Market Value &middot; NGN</div>
+            <div class="ticket-price" id="heroPrice">&#8358;0</div>
+          </div>
+          <dl class="ticket-rows">
+            <div class="ticket-row"><dt>Mileage</dt><dd>61,200 km</dd></div>
+            <div class="ticket-row"><dt>Engine</dt><dd>2500cc</dd></div>
+            <div class="ticket-row"><dt>Fuel</dt><dd>Petrol</dd></div>
+            <div class="ticket-row"><dt>Location</dt><dd>Lagos</dd></div>
+          </dl>
+          <div class="ticket-barcode"></div>
+          <div class="ticket-stamp">Appraised</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================
+     PROOF
+============================================================ -->
+<section class="proof">
+  <div class="wrap proof-grid">
+    <!-- Replace these figures with your verified dataset numbers before presenting. -->
+    <div class="proof-item reveal">
+      <div class="proof-num">10,000+</div>
+      <div class="proof-label">Listings analyzed</div>
+    </div>
+    <div class="proof-item reveal">
+      <div class="proof-num">70+</div>
+      <div class="proof-label">Makes covered</div>
+    </div>
+    <div class="proof-item reveal">
+      <div class="proof-num">XGBoost</div>
+      <div class="proof-label">Gradient&#8209;boosted model</div>
+    </div>
+    <div class="proof-item reveal">
+      <div class="proof-num">&#8358; NGN</div>
+      <div class="proof-label">Nigerian market only</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     PROCESS
+============================================================ -->
+<section class="process" id="how">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">The process</p>
+      <h2>Three steps, one number.</h2>
+      <p>Nothing here is a black box you have to trust blindly &mdash; each valuation follows the same three&#8209;stage pipeline, in order.</p>
+    </div>
+    <div class="process-grid">
+      <div class="process-card reveal">
+        <span class="process-index">01</span>
+        <h3>Describe the vehicle</h3>
+        <p>Enter make, model, year and condition. Add specifications and a short listing description for a tighter estimate.</p>
+      </div>
+      <div class="process-card reveal">
+        <span class="process-index">02</span>
+        <h3>The model reads it</h3>
+        <p>TOKUNBO engineers the submission into the same features the valuation model was trained on, then scores it against real Nigerian listings.</p>
+      </div>
+      <div class="process-card reveal">
+        <span class="process-index">03</span>
+        <h3>Get a defensible number</h3>
+        <p>A single naira estimate, with the full vehicle summary attached &mdash; ready to quote, file or challenge.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     VALUATION FORM
+============================================================ -->
+<section class="valuation" id="valuation">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Run a valuation</p>
+      <h2>Value a vehicle.</h2>
+      <p>Fields marked <span style="color:var(--signal)">*</span> are required. Everything else sharpens the estimate.</p>
+    </div>
+
+    <div class="val-layout">
+      <div class="panel reveal">
+        <div class="form-error" id="formError" role="alert">
+          <span>&#9888;</span>
+          <span>
+            <strong id="formErrorTitle">Unable to connect</strong>
+            <span id="formErrorBody">We couldn't reach the valuation server. Check your connection and try again.</span>
+          </span>
+        </div>
+
+        <form id="valuationForm" novalidate>
+
+          <fieldset>
+            <legend>Vehicle identity</legend>
+            <div class="field-grid">
+              <div class="field">
+                <label for="make">Make <span class="req">*</span></label>
+                <input type="text" id="make" name="make" list="makeList" placeholder="e.g. Toyota" required autocomplete="off">
+                <datalist id="makeList">
+                  <option value="Toyota"><option value="Lexus"><option value="Honda">
+                  <option value="Mercedes-Benz"><option value="BMW"><option value="Ford">
+                  <option value="Hyundai"><option value="Kia"><option value="Nissan">
+                  <option value="Land Rover"><option value="Peugeot"><option value="Volkswagen">
+                  <option value="Mazda"><option value="Mitsubishi"><option value="Acura">
+                  <option value="Infiniti"><option value="Jeep"><option value="Chevrolet">
+                  <option value="Audi"><option value="Volvo">
+                </datalist>
+              </div>
+              <div class="field">
+                <label for="model">Model <span class="req">*</span></label>
+                <input type="text" id="model" name="model" placeholder="e.g. Camry" required autocomplete="off">
+              </div>
+              <div class="field">
+                <label for="year">Year <span class="req">*</span></label>
+                <input type="number" id="year" name="year" placeholder="e.g. 2021" min="1980" max="2026" required>
+              </div>
+              <div class="field">
+                <label for="trim">Trim <span class="opt">optional</span></label>
+                <input type="text" id="trim" name="trim" placeholder="e.g. XSE" autocomplete="off">
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Condition &amp; usage</legend>
+            <div class="field-grid">
+              <div class="field">
+                <label for="condition">Condition <span class="req">*</span></label>
+                <select id="condition" name="condition" required>
+                  <option value="" disabled selected>Select condition</option>
+                  <option value="Brand New">Brand New</option>
+                  <option value="Foreign Used">Foreign Used</option>
+                  <option value="Local Used">Local Used</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="transmission">Transmission <span class="req">*</span></label>
+                <select id="transmission" name="transmission" required>
+                  <option value="" disabled selected>Select transmission</option>
+                  <option value="Automatic">Automatic</option>
+                  <option value="Manual">Manual</option>
+                  <option value="CVT">CVT</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="mileage">Mileage (km) <span class="opt">optional</span></label>
+                <input type="number" id="mileage" name="mileage" placeholder="e.g. 61200" min="0">
+                <div class="field-check">
+                  <input type="checkbox" id="mileageUnknown">
+                  <label for="mileageUnknown">I don't know the mileage</label>
+                </div>
+              </div>
+              <div class="field">
+                <label for="registered_car">Registered car <span class="opt">optional</span></label>
+                <select id="registered_car" name="registered_car">
+                  <option value="Unknown" selected>Unknown</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+            </div>
+          </fieldset>
+
+          <button type="button" class="advanced-toggle" id="advancedToggle" aria-expanded="false" aria-controls="advancedBody">
+            <span>Add specifications &amp; location &mdash; sharpens the estimate</span>
+            <span class="chev">&#9660;</span>
+          </button>
+
+          <div class="advanced-body" id="advancedBody">
+            <div class="advanced-body-inner">
+
+              <fieldset>
+                <legend>Specifications</legend>
+                <div class="field-grid">
+                  <div class="field">
+                    <label for="body_type">Body type <span class="opt">optional</span></label>
+                    <select id="body_type" name="body_type">
+                      <option value="Unknown" selected>Unknown</option>
+                      <option>SUV</option><option>Sedan</option><option>Coupe</option>
+                      <option>Hatchback</option><option>Pickup</option><option>Van</option>
+                      <option>Wagon</option><option>Convertible</option><option>Other</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="fuel_type">Fuel type <span class="opt">optional</span></label>
+                    <select id="fuel_type" name="fuel_type">
+                      <option value="Unknown" selected>Unknown</option>
+                      <option>Petrol</option><option>Diesel</option><option>Hybrid</option>
+                      <option>Electric</option><option>CNG</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="engine_size">Engine size (cc) <span class="opt">optional</span></label>
+                    <input type="number" id="engine_size" name="engine_size" placeholder="e.g. 2500" min="0">
+                  </div>
+                  <div class="field">
+                    <label for="horsepower">Horsepower <span class="opt">optional</span></label>
+                    <input type="number" id="horsepower" name="horsepower" placeholder="e.g. 268" min="0">
+                  </div>
+                  <div class="field">
+                    <label for="cylinders">Cylinders <span class="opt">optional</span></label>
+                    <input type="number" id="cylinders" name="cylinders" placeholder="e.g. 4" min="0" max="16">
+                  </div>
+                  <div class="field">
+                    <label for="seats">Seats <span class="opt">optional</span></label>
+                    <select id="seats" name="seats">
+                      <option value="" selected>Unspecified</option>
+                      <option>2</option><option>4</option><option>5</option>
+                      <option>6</option><option>7</option><option>8</option><option value="9">9+</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="drivetrain">Drivetrain <span class="opt">optional</span></label>
+                    <select id="drivetrain" name="drivetrain">
+                      <option value="Unknown" selected>Unknown</option>
+                      <option value="FWD">FWD</option><option value="RWD">RWD</option>
+                      <option value="AWD">AWD</option><option value="4WD">4WD</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="powertrain_type">Powertrain <span class="opt">optional</span></label>
+                    <select id="powertrain_type" name="powertrain_type">
+                      <option value="Unknown" selected>Unknown</option>
+                      <option value="Combustion">Combustion</option>
+                      <option value="Hybrid">Hybrid</option>
+                      <option value="Electric">Electric</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="color">Exterior color <span class="opt">optional</span></label>
+                    <select id="color" name="color">
+                      <option value="Unknown" selected>Unknown</option>
+                      <option>Black</option><option>White</option><option>Gray</option>
+                      <option>Silver</option><option>Red</option><option>Blue</option>
+                      <option>Brown</option><option>Gold</option><option>Green</option><option>Other</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="interior_color">Interior color <span class="opt">optional</span></label>
+                    <select id="interior_color" name="interior_color">
+                      <option value="Unknown" selected>Unknown</option>
+                      <option>Black</option><option>Beige</option><option>Gray</option>
+                      <option>Brown</option><option>Other</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="second_condition">Condition notes <span class="opt">optional</span></label>
+                    <input type="text" id="second_condition" name="second_condition" placeholder="e.g. accident-free, single owner">
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Location &amp; description</legend>
+                <div class="field-grid">
+                  <div class="field span-2">
+                    <label for="location">Listing location <span class="opt">optional</span></label>
+                    <input type="text" id="location" name="location" list="cityList" placeholder="e.g. Lagos" autocomplete="off">
+                    <datalist id="cityList">
+                      <option value="Lagos"><option value="Abuja"><option value="Port Harcourt">
+                      <option value="Ibadan"><option value="Kano"><option value="Benin City">
+                      <option value="Enugu"><option value="Kaduna"><option value="Onitsha">
+                      <option value="Warri"><option value="Ogun"><option value="Aba">
+                    </datalist>
+                  </div>
+                  <div class="field span-2">
+                    <label for="description">Listing description <span class="opt">optional</span></label>
+                    <textarea id="description" name="description" placeholder="e.g. Clean foreign used, accident-free, duty paid, tokunbo Camry XSE with full service history."></textarea>
+                  </div>
+                </div>
+              </fieldset>
+
+            </div>
+          </div>
+
+          <div class="submit-row">
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+              <span class="spinner"></span>
+              <span class="btn-label">Generate valuation</span>
+            </button>
+            <span class="hero-note">One estimate per submission &middot; no listing is published</span>
+          </div>
+        </form>
+      </div>
+
+      <aside class="result-side reveal">
+        <div class="result-placeholder" id="resultPlaceholder">
+          <div class="mark">&#8358;</div>
+          <h3>Your valuation will appear here</h3>
+          <p>Fill in the vehicle details and generate a valuation &mdash; the certificate updates live on this side of the page.</p>
+        </div>
+
+        <div class="result-wrap" id="resultWrap">
+          <div class="ticket" id="resultTicket">
+            <div class="ticket-inner">
+              <div class="ticket-top">
+                <span class="ticket-eyebrow">Valuation Certificate</span>
+                <span class="ticket-serial" id="resultSerial">NG&#8209;VAL&#8209;000000</span>
+              </div>
+              <div class="ticket-vehicle" id="resultVehicle">&mdash;</div>
+              <div class="ticket-vehicle-sub" id="resultVehicleSub">&mdash;</div>
+              <div class="ticket-price-block">
+                <div class="ticket-price-label">Estimated Market Value &middot; NGN</div>
+                <div class="ticket-price" id="resultPrice">&#8358;0</div>
+              </div>
+              <dl class="ticket-rows" id="resultRows"></dl>
+              <div class="ticket-barcode"></div>
+              <div class="ticket-stamp" id="resultStamp">Appraised</div>
+            </div>
+          </div>
+          <p class="result-disclaimer">This is a model&#8209;generated estimate based on the details provided. Actual sale price depends on physical condition, documentation, negotiation and market timing &mdash; always confirm in person before a sale.</p>
+          <div class="result-actions">
+            <button type="button" class="btn btn-ghost" id="resetBtn">Value another vehicle</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     METHODOLOGY / ABOUT
+============================================================ -->
+<section class="method" id="method">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Under the ticket</p>
+      <h2 id="about">How the number is built.</h2>
+    </div>
+    <div class="method-grid">
+      <div class="method-copy reveal">
+        <p>Every estimate comes from a gradient&#8209;boosted model (XGBoost) trained on real Nigerian vehicle listings. Condition, mileage, trim, location and even free&#8209;text listing details are engineered into the same feature set the model learned from.</p>
+        <p>It is a statistical estimate, not a physical appraisal. Treat it as a defensible starting point for a negotiation &mdash; not a replacement for inspecting the vehicle and its documents in person.</p>
+      </div>
+      <ul class="method-list reveal">
+        <li><span class="k">Model</span><span class="v">XGBoost regressor</span></li>
+        <li><span class="k">Training data</span><span class="v">Nigerian marketplace listings</span></li>
+        <li><span class="k">Currency</span><span class="v">Naira (NGN)</span></li>
+        <li><span class="k">Coverage</span><span class="v">Brand new, foreign &amp; local used</span></li>
+        <li><span class="k">Output</span><span class="v">Single point estimate</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============================================================
+     FOOTER
+============================================================ -->
+<footer>
+  <div class="wrap footer-grid">
+    <div>
+      <a href="#top" class="brand"><span class="brand-mark">TOKUNBO<span>.</span></span></a>
+      <p class="footer-fine">Nigerian vehicle valuation index. Estimates are model&#8209;generated and are not a substitute for a physical inspection or professional appraisal.</p>
+    </div>
+    <ul class="footer-nav">
+      <li><a href="#top">Home</a></li>
+      <li><a href="#valuation">Valuation</a></li>
+      <li><a href="#method">Methodology</a></li>
+      <li><a href="#about">About</a></li>
+    </ul>
+  </div>
+  <div class="wrap">
+    <p class="footer-fine" style="margin-top:26px;">&copy; 2026 TOKUNBO. All rights reserved.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     CONFIG — point this at your running FastAPI backend
+  ============================================================ */
+  var API_BASE_URL = "http://127.0.0.1:8000"; // change to your deployed backend URL
+  var PREDICT_ENDPOINT = API_BASE_URL + "/predict";
+
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------------- mobile nav ---------------- */
+  var burger = document.getElementById("burgerBtn");
+  var panel = document.getElementById("mobilePanel");
+  burger.addEventListener("click", function(){
+    var open = burger.getAttribute("aria-expanded") === "true";
+    burger.setAttribute("aria-expanded", String(!open));
+    panel.classList.toggle("is-open", !open);
+  });
+  panel.querySelectorAll("a").forEach(function(a){
+    a.addEventListener("click", function(){
+      burger.setAttribute("aria-expanded", "false");
+      panel.classList.remove("is-open");
+    });
+  });
+
+  /* ---------------- scroll reveal ---------------- */
+  var revealEls = document.querySelectorAll(".reveal");
+  if("IntersectionObserver" in window && !reduceMotion){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){
+          entry.target.classList.add("is-visible");
+          io.unobserve(entry.target);
+        }
+      });
+    }, {threshold:0.14});
+    revealEls.forEach(function(el){ io.observe(el); });
+  } else {
+    revealEls.forEach(function(el){ el.classList.add("is-visible"); });
+  }
+
+  /* ---------------- naira formatting ---------------- */
+  function formatNaira(value){
+    var n = Math.round(Number(value) || 0);
+    return "\u20A6" + n.toLocaleString("en-US");
+  }
+
+  /* ---------------- hero ticket count-up ---------------- */
+  var heroPriceEl = document.getElementById("heroPrice");
+  var heroTarget = 12400000;
+  function countUp(el, target, duration){
+    if(reduceMotion){ el.textContent = formatNaira(target); return; }
+    var start = null;
+    function step(ts){
+      if(start === null) start = ts;
+      var progress = Math.min((ts - start) / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = formatNaira(target * eased);
+      if(progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  window.addEventListener("load", function(){
+    countUp(heroPriceEl, heroTarget, 1400);
+    var heroStamp = document.querySelector(".hero-visual .ticket-stamp");
+    setTimeout(function(){ heroStamp.classList.add("animate"); }, 900);
+  });
+
+  /* ---------------- advanced fields toggle ---------------- */
+  var advToggle = document.getElementById("advancedToggle");
+  var advBody = document.getElementById("advancedBody");
+  advToggle.addEventListener("click", function(){
+    var open = advToggle.getAttribute("aria-expanded") === "true";
+    advToggle.setAttribute("aria-expanded", String(!open));
+    advBody.classList.toggle("is-open", !open);
+  });
+
+  /* ---------------- mileage unknown checkbox ---------------- */
+  var mileageInput = document.getElementById("mileage");
+  var mileageUnknown = document.getElementById("mileageUnknown");
+  mileageUnknown.addEventListener("change", function(){
+    mileageInput.disabled = mileageUnknown.checked;
+    if(mileageUnknown.checked) mileageInput.value = "";
+  });
+
+  /* ---------------- serial number generator ---------------- */
+  function makeSerial(){
+    var chars = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789";
+    var out = "";
+    for(var i = 0; i < 6; i++){ out += chars[Math.floor(Math.random() * chars.length)]; }
+    return "NG-VAL-" + out;
+  }
+
+  /* ---------------- form submit ---------------- */
+  var form = document.getElementById("valuationForm");
+  var submitBtn = document.getElementById("submitBtn");
+  var formError = document.getElementById("formError");
+  var formErrorTitle = document.getElementById("formErrorTitle");
+  var formErrorBody = document.getElementById("formErrorBody");
+  var resultPlaceholder = document.getElementById("resultPlaceholder");
+  var resultWrap = document.getElementById("resultWrap");
+  var resetBtn = document.getElementById("resetBtn");
+
+  var numericFields = ["year","mileage","engine_size","horsepower","cylinders","seats"];
+  var stringDefaultUnknown = ["color","location","fuel_type","body_type","second_condition",
+    "interior_color","registered_car","powertrain_type","drivetrain","trim"];
+
+  function showError(title, body){
+    formErrorTitle.textContent = title;
+    formErrorBody.textContent = body;
+    formError.classList.add("is-visible");
+    formError.scrollIntoView({behavior: reduceMotion ? "auto" : "smooth", block:"center"});
+  }
+  function hideError(){ formError.classList.remove("is-visible"); }
+
+  function collectPayload(){
+    var data = {};
+    var elements = form.elements;
+
+    for(var i = 0; i < elements.length; i++){
+      var el = elements[i];
+      if(!el.name || el.disabled) continue;
+      if(el.type === "checkbox") continue;
+      data[el.name] = el.value;
+    }
+
+    // required fields
+    var payload = {
+      make: (data.make || "").trim(),
+      model: (data.model || "").trim(),
+      year: data.year ? Number(data.year) : null,
+      condition: data.condition || "",
+      transmission: data.transmission || ""
+    };
+
+    // description always sent, defaults to ""
+    payload.description = (data.description || "").trim();
+
+    // numeric optional fields -> number or null
+    ["mileage","engine_size","horsepower","cylinders","seats"].forEach(function(key){
+      var raw = data[key];
+      payload[key] = (raw === undefined || raw === "" || raw === null) ? null : Number(raw);
+    });
+
+    // string optional fields -> value or "Unknown" (backend default)
+    stringDefaultUnknown.forEach(function(key){
+      var raw = data[key];
+      payload[key] = (raw === undefined || raw === "") ? "Unknown" : raw;
+    });
+
+    return payload;
+  }
+
+  function vehicleTitle(payload){
+    return [payload.make, payload.model].filter(Boolean).join(" ");
+  }
+  function vehicleSubtitle(payload){
+    var bits = [];
+    if(payload.year) bits.push(String(payload.year));
+    if(payload.condition) bits.push(payload.condition);
+    if(payload.transmission) bits.push(payload.transmission);
+    return bits.join(" \u00B7 ");
+  }
+
+  function renderResult(payload, price){
+    document.getElementById("resultSerial").textContent = makeSerial();
+    document.getElementById("resultVehicle").textContent = vehicleTitle(payload) || "\u2014";
+    document.getElementById("resultVehicleSub").textContent = vehicleSubtitle(payload) || "\u2014";
+    document.getElementById("resultPrice").textContent = formatNaira(price);
+
+    var rowsEl = document.getElementById("resultRows");
+    rowsEl.innerHTML = "";
+    var rows = [
+      ["Mileage", payload.mileage != null ? Number(payload.mileage).toLocaleString("en-US") + " km" : "Not provided"],
+      ["Engine", payload.engine_size != null ? payload.engine_size + "cc" : "Not provided"],
+      ["Fuel", payload.fuel_type || "Unknown"],
+      ["Location", payload.location || "Unknown"]
+    ];
+    rows.forEach(function(pair){
+      var row = document.createElement("div");
+      row.className = "ticket-row";
+      row.innerHTML = "<dt>" + pair[0] + "</dt><dd>" + pair[1] + "</dd>";
+      rowsEl.appendChild(row);
+    });
+
+    resultPlaceholder.style.display = "none";
+    resultWrap.classList.add("is-visible");
+
+    var stamp = document.getElementById("resultStamp");
+    stamp.classList.remove("animate");
+    void stamp.offsetWidth; // restart animation
+    stamp.classList.add("animate");
+
+    resultWrap.scrollIntoView({behavior: reduceMotion ? "auto" : "smooth", block:"nearest"});
+  }
+
+  function setLoading(isLoading){
+    submitBtn.disabled = isLoading;
+    submitBtn.classList.toggle("is-loading", isLoading);
+    submitBtn.querySelector(".btn-label").textContent = isLoading ? "Calculating\u2026" : "Generate valuation";
+  }
+
+  form.addEventListener("submit", function(e){
+    e.preventDefault();
+    hideError();
+
+    if(!form.checkValidity()){
+      form.reportValidity();
+      return;
+    }
+
+    var payload = collectPayload();
+    setLoading(true);
+
+    fetch(PREDICT_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+    .then(function(response){
+      if(!response.ok){
+        return response.json().catch(function(){ return null; }).then(function(body){
+          var msg = body && body.detail ? JSON.stringify(body.detail) : "Something went wrong while calculating your estimate.";
+          throw new Error(msg);
+        });
+      }
+      return response.json();
+    })
+    .then(function(result){
+      if(!result || result.success !== true || typeof result.predicted_price !== "number"){
+        throw new Error("The server returned an unexpected response.");
+      }
+      renderResult(payload, result.predicted_price);
+    })
+    .catch(function(err){
+      if(err instanceof TypeError){
+        showError("Unable to connect", "We couldn't reach the valuation server. Check that the API is running and try again.");
+      } else {
+        showError("Couldn't calculate this estimate", err.message || "Please check your information and try again.");
+      }
+    })
+    .finally(function(){
+      setLoading(false);
+    });
+  });
+
+  resetBtn.addEventListener("click", function(){
+    form.reset();
+    mileageInput.disabled = false;
+    resultWrap.classList.remove("is-visible");
+    resultPlaceholder.style.display = "";
+    hideError();
+    document.getElementById("valuation").scrollIntoView({behavior: reduceMotion ? "auto" : "smooth", block:"start"});
+  });
+
+})();
+</script>
+
+</body>
+</html>
