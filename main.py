@@ -16,7 +16,11 @@ from predictor import predict_car_price
 # =============================================================================
 
 
-
+app = FastAPI(
+    title="Nigeria Car Price Prediction API",
+    description="Car price prediction API",
+    version="1.0.0"
+)
 
 # =============================================================================
 # CORS
