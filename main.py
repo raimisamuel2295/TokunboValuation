@@ -15,11 +15,7 @@ from predictor import predict_car_price
 # CREATE FASTAPI APP
 # =============================================================================
 
-app = FastAPI(
-    title="Nigeria Car Price Prediction API",
-    description="Car price prediction using the Step 21 XGBoost model",
-    version="1.0.0"
-)
+
 
 
 # =============================================================================
