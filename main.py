@@ -41,7 +41,7 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-@app.get("/app")
+@app.get("/")
 def serve_app():
     return FileResponse("static/index.html")
 
